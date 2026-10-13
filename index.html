@@ -803,6 +803,18 @@ function addToCart(id){
   updateCartBadge();
   renderCartDrawer();
   toast(`"${p.name}" added ✓`,'ok');
+  // GA4: add_to_cart event
+  gtag('event', 'add_to_cart', {
+    currency: 'USD',
+    value: p.price,
+    items: [{
+      item_id: String(p.id),
+      item_name: p.name,
+      item_category: p.cat,
+      price: p.price,
+      quantity: 1
+    }]
+  });
 }
 
 // 🐛 EASY E5: OOS product still "adds" — fires toast and pushes to cart
@@ -887,6 +899,33 @@ function checkout(){
   // 🐛 NEW MEDIUM NM7: Checkout allowed even when cart is empty
   // Should check: if(!cart.length){ toast('Cart is empty!','err'); return; }
   toast('Redirecting to checkout…','ok');
+
+  const cartItems = cart.map(c => ({
+    item_id: String(c.product.id),
+    item_name: c.product.name,
+    item_category: c.product.cat,
+    price: c.product.price,
+    quantity: c.qty
+  }));
+  const cartTotal = cart.reduce((s,c) => s + c.product.price * c.qty, 0);
+
+  // GA4: begin_checkout event
+  gtag('event', 'begin_checkout', {
+    currency: 'USD',
+    value: cartTotal,
+    items: cartItems
+  });
+
+  // GA4: purchase event (simulated — fires after 1.5s like a redirect confirmation)
+  setTimeout(() => {
+    gtag('event', 'purchase', {
+      transaction_id: 'SN-' + Date.now(),
+      currency: 'USD',
+      value: cartTotal,
+      items: cartItems
+    });
+  }, 1500);
+
   setTimeout(closeCart,1000);
 }
 
